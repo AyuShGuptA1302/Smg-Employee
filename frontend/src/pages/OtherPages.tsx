@@ -261,7 +261,7 @@ export const UniformPage = () => {
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <button
-                        onClick={() => window.open(`http://localhost:5000/api/pdf/uniform/${req._id}`, '_blank')}
+                        onClick={() => window.open(`/api/pdf/uniform/${req._id}`, '_blank')}
                         className="flex items-center gap-1.5 bg-[#0B4DA2]/10 text-[#0B4DA2] px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#0B4DA2] hover:text-white transition-colors"
                       >
                         <Download size={14} /> PDF
@@ -376,7 +376,7 @@ export const GeneralRequestsPage = () => {
   const fetchRequests = () => {
     const userId = localStorage.getItem('userId');
     if (!userId) return;
-    fetch(`http://localhost:5000/api/general-requests/${userId}`)
+    fetch(`/api/general-requests/${userId}`)
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => setRequestsList(data))
       .catch((err) => console.error('Error fetching general requests:', err));
@@ -395,7 +395,7 @@ export const GeneralRequestsPage = () => {
     }
 
     setIsSubmitting(true);
-    fetch('http://localhost:5000/api/general-requests', {
+    fetch('/api/general-requests', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -630,7 +630,7 @@ export const MyAttendancePage = () => (
 export const PayrollPage = () => {
   const { payslips } = useApp();
   const handleDownload = (payslipId: string) => {
-    window.open(`http://localhost:5000/api/pdf/payslip/${payslipId}`, '_blank');
+    window.open(`/api/pdf/payslip/${payslipId}`, '_blank');
   };
   return (
     <SimplePage icon={Receipt} title="Payroll & Salary" description="View your salary details and download payslips">

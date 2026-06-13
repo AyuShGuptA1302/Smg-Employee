@@ -64,7 +64,7 @@ export const AdminDashboard = ({ onNavigate }) => {
   const [departmentStats, setDepartmentStats] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/admin/dashboard')
+    fetch('/api/admin/dashboard')
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (data) {

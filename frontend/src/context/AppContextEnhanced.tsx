@@ -120,7 +120,7 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     const userId = localStorage.getItem('userId');
     if (!userId) return;
-    const API = 'http://localhost:5000/api';
+    const API = '/api';
     const fetchSafe = async (url: string) => {
       try { const r = await fetch(url); return r.ok ? r.json() : null; } catch { return null; }
     };

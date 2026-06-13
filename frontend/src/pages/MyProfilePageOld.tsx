@@ -24,7 +24,7 @@ export const MyProfilePageOld = ({ user: initialUser }) => {
     const userId = localStorage.getItem('userId') || initialUser._id;
     if (!userId) return;
     
-    fetch(`http://localhost:5000/api/user/${userId}`)
+    fetch(`/api/user/${userId}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (data) {

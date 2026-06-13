@@ -169,7 +169,7 @@ export function UniformPortal() {
 
   const fetchRequests = () => {
     setIsFetchingRequests(true);
-    fetch('http://localhost:5000/api/uniforms')
+    fetch('/api/uniforms')
       .then(res => res.ok ? res.json() : [])
       .then(data => {
         const mapped = data.map((item: any) => ({
@@ -312,7 +312,7 @@ export function UniformPortal() {
   );
 
   const handleApproveRequest = (requestId: string) => {
-    fetch(`http://localhost:5000/api/uniforms/${requestId}`, {
+    fetch(`/api/uniforms/${requestId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'Approved', approver: 'Uniform Desk' })
@@ -332,7 +332,7 @@ export function UniformPortal() {
   };
 
   const handleRejectRequest = (requestId: string) => {
-    fetch(`http://localhost:5000/api/uniforms/${requestId}`, {
+    fetch(`/api/uniforms/${requestId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'Rejected', approver: 'Uniform Desk' })
@@ -367,7 +367,7 @@ export function UniformPortal() {
     // Find the approved request for this employee if exists, and set it to Delivered
     const requestToIssue = uniformRequests.find(r => r.employeeId === formData.employeeId && (r.status === 'approved' || r.status === 'approved'));
     if (requestToIssue) {
-      fetch(`http://localhost:5000/api/uniforms/${requestToIssue.id}`, {
+      fetch(`/api/uniforms/${requestToIssue.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'Delivered', deliveryDate: new Date() })

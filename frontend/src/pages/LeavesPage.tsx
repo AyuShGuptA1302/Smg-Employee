@@ -17,12 +17,12 @@ export const LeavesPage = () => {
     const userId = localStorage.getItem('userId');
     if (!userId) return;
 
-    fetch(`http://localhost:5000/api/leaves/${userId}`)
+    fetch(`/api/leaves/${userId}`)
       .then(res => res.ok ? res.json() : [])
       .then(data => setLeaveRequests(data))
       .catch(console.error);
 
-    fetch(`http://localhost:5000/api/leave-balance/${userId}`)
+    fetch(`/api/leave-balance/${userId}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (data) setBalance(data);
@@ -37,7 +37,7 @@ export const LeavesPage = () => {
   ];
 
   const handleDownload = (id: string) => {
-    window.open(`http://localhost:5000/api/pdf/leave/${id}`, '_blank');
+    window.open(`/api/pdf/leave/${id}`, '_blank');
   };
 
   const getStatusIcon = (status) => {
@@ -64,7 +64,7 @@ export const LeavesPage = () => {
     const userId = localStorage.getItem('userId');
     if (!userId) return;
 
-    fetch('http://localhost:5000/api/leaves', {
+    fetch('/api/leaves', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

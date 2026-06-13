@@ -94,7 +94,7 @@ export const TrainingPageOld = ({ user }) => {
     const userId = localStorage.getItem('userId') || user._id;
     if (!userId) return;
     
-    fetch('http://localhost:5000/api/trainings')
+    fetch('/api/trainings')
       .then(res => res.ok ? res.json() : [])
       .then(data => {
         const now = new Date();
@@ -121,7 +121,7 @@ export const TrainingPageOld = ({ user }) => {
     const userId = localStorage.getItem('userId') || user._id;
     if (!userId) return;
 
-    fetch(`http://localhost:5000/api/trainings/${training.id}/enroll`, {
+    fetch(`/api/trainings/${training.id}/enroll`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId })

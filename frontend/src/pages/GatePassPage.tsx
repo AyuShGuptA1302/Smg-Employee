@@ -25,7 +25,7 @@ interface GatePassStats {
 
 export const GatePassPage = () => {
     const handleDownload = (id: string) => {
-        window.open(`http://localhost:5000/api/pdf/gatepass/${id}`, '_blank');
+        window.open(`/api/pdf/gatepass/${id}`, '_blank');
     };
     const [gatePassType, setGatePassType] = useState('Official Work Outside');
     const [exitDate, setExitDate] = useState('');
@@ -51,7 +51,7 @@ export const GatePassPage = () => {
     const fetchHistory = useCallback(() => {
         const userId = localStorage.getItem('userId');
         if (!userId) return;
-        fetch(`http://localhost:5000/api/gatepasses/${userId}`)
+        fetch(`/api/gatepasses/${userId}`)
             .then(res => res.ok ? res.json() : [])
             .then(data => {
                 setGatePassHistory(data.map((gp: any) => ({
@@ -68,7 +68,7 @@ export const GatePassPage = () => {
                 })));
             })
             .catch(console.error);
-        fetch(`http://localhost:5000/api/gatepasses/${userId}/stats`)
+        fetch(`/api/gatepasses/${userId}/stats`)
             .then(res => res.ok ? res.json() : null)
             .then(data => { if (data) setStats(data); })
             .catch(console.error);
@@ -82,7 +82,7 @@ export const GatePassPage = () => {
 
     const handleCancelPass = (passId: string) => {
         if (!confirm('Are you sure you want to cancel this gate pass?')) return;
-        fetch(`http://localhost:5000/api/gatepasses/${passId}/cancel`, { method: 'PUT' })
+        fetch(`/api/gatepasses/${passId}/cancel`, { method: 'PUT' })
             .then(res => res.ok ? res.json() : Promise.reject())
             .then(() => { showToast('Gate pass cancelled successfully', 'info'); fetchHistory(); })
             .catch(() => showToast('Failed to cancel gate pass', 'error'));
@@ -128,7 +128,7 @@ export const GatePassPage = () => {
         };
 
         setIsSubmitting(true);
-        fetch('http://localhost:5000/api/gatepasses', {
+        fetch('/api/gatepasses', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user: userId, type: mapType(gatePassType), date: exitDate, outTime: exitTime, inTime: expectedReturnTime, reason, status: 'Pending' })

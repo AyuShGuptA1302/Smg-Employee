@@ -58,7 +58,7 @@ export const PayrollPageOld = ({ user }) => {
   useEffect(() => {
     const userId = localStorage.getItem('userId');
     if (!userId) return;
-    fetch(`http://localhost:5000/api/payroll/${userId}`)
+    fetch(`/api/payroll/${userId}`)
       .then(r => r.ok ? r.json() : [])
       .then(data => setPayrollRecords(data))
       .catch(() => {});
@@ -71,14 +71,14 @@ export const PayrollPageOld = ({ user }) => {
 
   const handleView = (month: string) => {
     const id = getPayrollId(month);
-    if (id) window.open(`http://localhost:5000/api/pdf/payslip/${id}`, '_blank');
+    if (id) window.open(`/api/pdf/payslip/${id}`, '_blank');
     else alert(`No payslip record found for ${month}`);
   };
 
   const handleDownload = (month: string) => {
     const id = getPayrollId(month);
     if (id) {
-      window.open(`http://localhost:5000/api/pdf/payslip/${id}`, '_blank');
+      window.open(`/api/pdf/payslip/${id}`, '_blank');
     } else alert(`No payslip record found for ${month}`);
   };
 

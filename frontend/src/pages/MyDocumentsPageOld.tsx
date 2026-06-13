@@ -145,7 +145,7 @@ export const MyDocumentsPageOld = ({ documents: initialDocs, user }) => {
   useEffect(() => {
     const userId = localStorage.getItem('userId');
     if (!userId) return;
-    fetch(`http://localhost:5000/api/documents/${userId}`)
+    fetch(`/api/documents/${userId}`)
       .then(res => res.ok ? res.json() : [])
       .then(data => {
         if (data && data.length > 0) {
@@ -269,7 +269,7 @@ export const MyDocumentsPageOld = ({ documents: initialDocs, user }) => {
                 key={doc.id}
                 doc={doc}
                 onView={(d) => alert(`Viewing: ${d.title}`)}
-                onDownload={(d) => window.open(`http://localhost:5000/api/pdf/letter/${user._id}/${d.title.toLowerCase().includes('offer') ? 'offer' : 'experience'}`, '_blank')}
+                onDownload={(d) => window.open(`/api/pdf/letter/${user._id}/${d.title.toLowerCase().includes('offer') ? 'offer' : 'experience'}`, '_blank')}
               />
             ))}
           </div>

@@ -6,7 +6,7 @@ import {
   PlusCircle, Zap, Smartphone, Globe
 } from 'lucide-react';
 
-const API = 'http://localhost:5000/api';
+const API = '/api';
 
 // Fallback menu in case backend is empty
 const FALLBACK_MENU = [

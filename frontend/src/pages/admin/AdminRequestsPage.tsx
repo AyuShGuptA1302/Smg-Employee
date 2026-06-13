@@ -31,7 +31,7 @@ export const AdminRequestsPage = ({ onNavigate }: AdminRequestsPageProps) => {
   const [requests, setRequests] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/admin/requests')
+    fetch('/api/admin/requests')
       .then(res => res.ok ? res.json() : [])
       .then(data => setRequests(data))
       .catch(console.error);
@@ -59,7 +59,7 @@ export const AdminRequestsPage = ({ onNavigate }: AdminRequestsPageProps) => {
     else if (req.type === 'Gate Pass') endpoint = `/api/gatepasses/${req.id}/approve`;
     else endpoint = `/api/requests/${req.id}/approve`;
 
-    fetch(`http://localhost:5000${endpoint}`, {
+    fetch(`${endpoint}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({})
@@ -80,7 +80,7 @@ export const AdminRequestsPage = ({ onNavigate }: AdminRequestsPageProps) => {
       else if (selectedRequest.type === 'Gate Pass') endpoint = `/api/gatepasses/${selectedRequest.id}/reject`;
       else endpoint = `/api/requests/${selectedRequest.id}/reject`;
 
-      fetch(`http://localhost:5000${endpoint}`, {
+      fetch(`${endpoint}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason: comment })
@@ -95,9 +95,9 @@ export const AdminRequestsPage = ({ onNavigate }: AdminRequestsPageProps) => {
 
   const handleDownloadPDF = (req) => {
     if (req.type === 'Leave Request') {
-      window.open(`http://localhost:5000/api/pdf/leave/${req.id}`, '_blank');
+      window.open(`/api/pdf/leave/${req.id}`, '_blank');
     } else if (req.type === 'Gate Pass') {
-      window.open(`http://localhost:5000/api/pdf/gatepass/${req.id}`, '_blank');
+      window.open(`/api/pdf/gatepass/${req.id}`, '_blank');
     } else {
       alert(`No PDF available for ${req.type}`);
     }
