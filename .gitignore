@@ -1,0 +1,8 @@
+node_modules/
+.env
+dist/
+build/
+.DS_Store
+SMG-Employee-Cloud-Portal-main.zip
+SMG-Employee-Cloud-Portal-main/
+*.log

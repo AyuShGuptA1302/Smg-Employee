@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # ─── MongoDB ────────────────────────────────────────────────
+  mongodb:
+    image: mongo:7
+    container_name: smg-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: employee-portal
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - smg-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/employee-portal --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  # ─── Backend (Node.js / Express) ────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smg-backend
+    restart: unless-stopped
+    environment:
+      PORT: 5000
+      MONGO_URI: mongodb://mongodb:27017/employee-portal
+      JWT_SECRET: smg-employee-portal-secret-2024
+    ports:
+      - "5000:5000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - smg-network
+    volumes:
+      - ./backend/assets:/app/assets
+
+  # ─── Frontend (Vite React → Nginx) ──────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # During Docker build, API calls from browser go through nginx proxy on same host
+        VITE_API_URL: /api
+    container_name: smg-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - smg-network
+
+  # ─── Cloudflare Tunnel (public URL) ─────────────────────────
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: smg-cloudflared
+    restart: unless-stopped
+    command: tunnel --url http://smg-frontend:80 --no-autoupdate
+    depends_on:
+      - frontend
+    networks:
+      - smg-network
+
+# ─── Volumes ────────────────────────────────────────────────
+volumes:
+  mongodb_data:
+    driver: local
+
+# ─── Networks ───────────────────────────────────────────────
+networks:
+  smg-network:
+    driver: bridge
