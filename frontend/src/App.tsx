@@ -458,6 +458,7 @@ export default function App() {
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
     localStorage.removeItem('userData');
+    localStorage.removeItem('employee_user');
     setIsLoggedIn(false);
     setActivePage('dashboard');
     setUserRole('employee');

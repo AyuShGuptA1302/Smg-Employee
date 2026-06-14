@@ -561,4 +561,113 @@ function generateUniformPDF(request, user) {
     return doc;
 }
 
-module.exports = { generatePayslipPDF, generateGatePassPDF, generateLeavePDF, generateLetterPDF, generateMissSlipPDF, generateTravelPDF, generateCanteenOrderPDF, generateUniformPDF };
+// ═══════════════════════════════════════════
+//  EMPLOYEE PROFILE PDF
+// ═══════════════════════════════════════════
+function generateEmployeeProfilePDF(user, extraData = {}) {
+    const doc = new PDFDocument({ size: 'A4', margin: 50 });
+    smgHeader(doc, 'EMPLOYEE PROFILE CARD', 'SMG/HR/EPC');
+    let y = doc.y + 8;
+
+    // ── Personal Information ──
+    y = sectionHead(doc, 'PERSONAL INFORMATION', y);
+
+    fieldBox(doc, 50, y, 250, 22, 'Full Name:', user.name || '-');
+    fieldBox(doc, 300, y, 245, 22, 'Employee ID:', user.empId || '-');
+    y += 22;
+    fieldBox(doc, 50, y, 250, 22, 'Email:', user.email || '-');
+    fieldBox(doc, 300, y, 245, 22, 'Phone:', user.phone || '-');
+    y += 22;
+    fieldBox(doc, 50, y, 250, 22, 'Date of Birth:', user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString('en-IN') : '-');
+    fieldBox(doc, 300, y, 245, 22, 'Blood Group:', user.bloodGroup || '-');
+    y += 22;
+    fieldBox(doc, 50, y, 495, 22, 'Address:', user.address || '-');
+    y += 22;
+    fieldBox(doc, 50, y, 250, 22, 'Emergency Contact:', user.emergencyContact || '-');
+    fieldBox(doc, 300, y, 245, 22, 'Gender:', user.gender || '-');
+    y += 27;
+
+    // ── Employment Details ──
+    y = sectionHead(doc, 'EMPLOYMENT DETAILS', y);
+
+    fieldBox(doc, 50, y, 250, 22, 'Department:', user.dept || '-');
+    fieldBox(doc, 300, y, 245, 22, 'Designation:', user.designation || '-');
+    y += 22;
+    fieldBox(doc, 50, y, 250, 22, 'Role:', user.role || '-');
+    fieldBox(doc, 300, y, 245, 22, 'Employment Type:', user.employmentType || 'Full-Time');
+    y += 22;
+    fieldBox(doc, 50, y, 250, 22, 'Date of Joining:', user.dateOfJoining ? new Date(user.dateOfJoining).toLocaleDateString('en-IN') : '-');
+    fieldBox(doc, 300, y, 245, 22, 'Status:', user.status || 'Active');
+    y += 22;
+    fieldBox(doc, 50, y, 250, 22, 'Reporting Manager:', user.reportingManager || '-');
+    fieldBox(doc, 300, y, 245, 22, 'Work Location:', user.workLocation || 'Head Office');
+    y += 27;
+
+    // ── Skills ──
+    if (user.skills && user.skills.length > 0) {
+        y = sectionHead(doc, 'SKILLS & EXPERTISE', y);
+        const skillText = user.skills.join('  •  ');
+        box(doc, 50, y, 495, 28);
+        doc.fontSize(9).font('Helvetica').text(skillText, 55, y + 9, { width: 485 });
+        y += 33;
+    }
+
+    // ── Certifications ──
+    if (user.certifications && user.certifications.length > 0) {
+        // check if we need a new page
+        if (y > 680) { doc.addPage(); y = 50; }
+        y = sectionHead(doc, 'CERTIFICATIONS', y);
+        const certColX = [50, 230, 390];
+        const certColW = [180, 160, 155];
+        box(doc, certColX[0], y, certColW[0], 18, { fill: BLUE });
+        box(doc, certColX[1], y, certColW[1], 18, { fill: BLUE });
+        box(doc, certColX[2], y, certColW[2], 18, { fill: BLUE });
+        doc.fontSize(8).font('Helvetica-Bold').fillColor('#fff');
+        doc.text('CERTIFICATION', certColX[0]+5, y+4);
+        doc.text('ISSUING BODY', certColX[1]+5, y+4);
+        doc.text('YEAR', certColX[2]+5, y+4);
+        doc.fillColor('#000');
+        y += 18;
+        user.certifications.forEach(cert => {
+            box(doc, certColX[0], y, certColW[0], 18);
+            box(doc, certColX[1], y, certColW[1], 18);
+            box(doc, certColX[2], y, certColW[2], 18);
+            doc.fontSize(8).font('Helvetica');
+            doc.text(cert.name || '-', certColX[0]+5, y+4, { width: 170 });
+            doc.text(cert.issuer || cert.issuingOrganization || '-', certColX[1]+5, y+4, { width: 150 });
+            doc.text(String(cert.year || cert.date || '-'), certColX[2]+5, y+4, { width: 145 });
+            y += 18;
+        });
+        y += 5;
+    }
+
+    // ── Education ──
+    if (user.education && user.education.length > 0) {
+        if (y > 680) { doc.addPage(); y = 50; }
+        y = sectionHead(doc, 'EDUCATION', y);
+        user.education.forEach(edu => {
+            fieldBox(doc, 50, y, 250, 22, edu.degree || 'Degree:', edu.institution || '-');
+            fieldBox(doc, 300, y, 245, 22, 'Year:', String(edu.year || '-'));
+            y += 22;
+        });
+        y += 5;
+    }
+
+    // ── Languages ──
+    if (user.languages && user.languages.length > 0) {
+        if (y > 680) { doc.addPage(); y = 50; }
+        y = sectionHead(doc, 'LANGUAGES KNOWN', y);
+        const langText = user.languages.join('  •  ');
+        box(doc, 50, y, 495, 22);
+        doc.fontSize(9).font('Helvetica').text(langText, 55, y + 6, { width: 485 });
+        y += 27;
+    }
+
+    doc.y = y;
+    signatureFooter(doc, 'Employee Signature', 'HR Manager / Authorized Signatory');
+    autoGenFooter(doc);
+    doc.end();
+    return doc;
+}
+
+module.exports = { generatePayslipPDF, generateGatePassPDF, generateLeavePDF, generateLetterPDF, generateMissSlipPDF, generateTravelPDF, generateCanteenOrderPDF, generateUniformPDF, generateEmployeeProfilePDF };

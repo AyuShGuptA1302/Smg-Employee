@@ -234,7 +234,10 @@ const TodaysMeetingsCard = ({ meetings }) => (
 
 export const DashboardPageOld = ({ data, onNavigate }) => {
   const greeting = getGreeting();
-  const [isClockedIn, setIsClockedIn] = useState(true);
+  const [isClockedIn, setIsClockedIn] = useState(false);
+  const [clockInTime, setClockInTime] = useState<string | null>(null);
+  const [clockOutTime, setClockOutTime] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<'in' | 'out' | null>(null);
 
   // ── Resolve all data from props, falling back to safe defaults ─────────────
   const dashStats        = data.stats           || defaultDashStats;
@@ -248,13 +251,14 @@ export const DashboardPageOld = ({ data, onNavigate }) => {
 
   const handleClockIn = () => {
     const currentTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-    alert(`Clocked In at ${currentTime}`);
+    setClockInTime(currentTime);
+    setClockOutTime(null);
     setIsClockedIn(true);
   };
 
   const handleClockOut = () => {
     const currentTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-    alert(`Clocked Out at ${currentTime}`);
+    setClockOutTime(currentTime);
     setIsClockedIn(false);
   };
 
@@ -368,48 +372,127 @@ export const DashboardPageOld = ({ data, onNavigate }) => {
           <div className="absolute bottom-1/4 right-1/3 w-1 h-1 bg-white/40 rounded-full animate-ping delay-1000"></div>
         </div>
 
-        {/* Leave Details Card */}
-        <div className="bg-white p-6 rounded-[30px] shadow-sm border border-gray-100">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-[#1B254B] text-lg">Leave Details</h3>
-            <button
-              onClick={() => onNavigate('my-attendance')}
-              className="text-xs font-bold text-[#0B4DA2] hover:underline"
-            >
-              View Attendance →
-            </button>
-          </div>
-
-          <div className="flex justify-center mb-6">
-            <div className="relative w-32 h-32">
-              <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="40" fill="none" stroke="#E5E7EB" strokeWidth="12" />
-                <circle cx="50" cy="50" r="40" fill="none" stroke="#042A5B" strokeWidth="12" strokeDasharray="100.53 251.33" strokeDashoffset="0" />
-                <circle cx="50" cy="50" r="40" fill="none" stroke="#0B4DA2" strokeWidth="12" strokeDasharray="25.13 251.33" strokeDashoffset="-100.53" />
-                <circle cx="50" cy="50" r="40" fill="none" stroke="#87CEEB" strokeWidth="12" strokeDasharray="100.53 251.33" strokeDashoffset="-125.66" />
-                <circle cx="50" cy="50" r="40" fill="none" stroke="#5DADE2" strokeWidth="12" strokeDasharray="100.53 251.33" strokeDashoffset="-226.19" />
-              </svg>
+        <div className="space-y-6">
+          {/* Clock In / Clock Out Card */}
+          <div className="bg-gradient-to-br from-[#0B4DA2] to-[#042A5B] p-6 rounded-[30px] shadow-lg text-white">
+            <div className="flex items-center gap-2 mb-4">
+              <Clock size={20} />
+              <h3 className="font-bold text-lg text-white">Attendance</h3>
             </div>
-          </div>
-
-          <div className="space-y-3">
-            <h4 className="text-sm font-bold text-gray-600 mb-3">Used leaves</h4>
-            {[
-              { label: 'General Leave', used: 4, total: 10, color: '#042A5B', pct: '40%' },
-              { label: 'Medical Leave', used: 1, total: 10, color: '#0B4DA2', pct: '10%' },
-              { label: 'Work From Home', used: 4, total: 10, color: '#87CEEB', pct: '40%' },
-              { label: 'Half-Day Leave', used: 4, total: 10, color: '#5DADE2', pct: '40%' },
-            ].map((item) => (
-              <div key={item.label}>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs font-medium text-gray-600">{item.label}</span>
-                  <span className="text-xs font-bold text-gray-800">{item.used} of {item.total}</span>
+            {pendingAction ? (
+              <div className="space-y-3 animate-in fade-in duration-200 text-left">
+                <p className="text-xs text-blue-200 leading-relaxed">
+                  Are you sure you want to {pendingAction === 'in' ? 'Clock In' : 'Clock Out'}?
+                </p>
+                <div className="bg-white/10 backdrop-blur-md p-2.5 rounded-xl border border-white/20 text-center font-bold text-sm">
+                  🕒 Current: {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
                 </div>
-                <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: item.pct, backgroundColor: item.color }}></div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setPendingAction(null)}
+                    className="flex-1 bg-white/20 hover:bg-white/30 text-white py-2 rounded-lg font-semibold text-xs transition-all active:scale-95"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (pendingAction === 'in') {
+                        handleClockIn();
+                      } else {
+                        handleClockOut();
+                      }
+                      setPendingAction(null);
+                    }}
+                    className={`flex-1 py-2 rounded-lg font-semibold text-xs transition-all active:scale-95 ${
+                      pendingAction === 'in' 
+                        ? 'bg-white text-[#0B4DA2] hover:bg-blue-50' 
+                        : 'bg-[#EE5D50] text-white hover:bg-red-600'
+                    }`}
+                  >
+                    Confirm
+                  </button>
                 </div>
               </div>
-            ))}
+            ) : !isClockedIn ? (
+              <div className="space-y-3">
+                {clockInTime && clockOutTime && (
+                  <div className="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/20 space-y-2 mb-2 text-xs">
+                    <div className="flex justify-between items-center border-b border-white/10 pb-1.5">
+                      <span className="text-blue-200 font-medium">Clocked In At</span>
+                      <span className="font-bold">{clockInTime}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-blue-200 font-medium">Clocked Out At</span>
+                      <span className="font-bold">{clockOutTime}</span>
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={() => setPendingAction('in')}
+                  className="w-full bg-white text-[#0B4DA2] py-3 rounded-xl font-bold hover:bg-blue-50 transition-all flex items-center justify-center gap-2 active:scale-95 text-sm"
+                >
+                  <Clock size={20} />Clock In
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/20 text-xs">
+                  <p className="text-blue-200 mb-1">Clocked In At</p>
+                  <p className="text-xl font-bold">{clockInTime}</p>
+                </div>
+                <button
+                  onClick={() => setPendingAction('out')}
+                  className="w-full bg-[#EE5D50] text-white py-3 rounded-xl font-bold hover:bg-red-600 transition-all flex items-center justify-center gap-2 active:scale-95 text-sm"
+                >
+                  <Clock size={20} />Clock Out
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Leave Details Card */}
+          <div className="bg-white p-6 rounded-[30px] shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-[#1B254B] text-lg">Leave Details</h3>
+              <button
+                onClick={() => onNavigate('my-attendance')}
+                className="text-xs font-bold text-[#0B4DA2] hover:underline"
+              >
+                View Attendance →
+              </button>
+            </div>
+
+            <div className="flex justify-center mb-6">
+              <div className="relative w-32 h-32">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#E5E7EB" strokeWidth="12" />
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#042A5B" strokeWidth="12" strokeDasharray="100.53 251.33" strokeDashoffset="0" />
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#0B4DA2" strokeWidth="12" strokeDasharray="25.13 251.33" strokeDashoffset="-100.53" />
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#87CEEB" strokeWidth="12" strokeDasharray="100.53 251.33" strokeDashoffset="-125.66" />
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#5DADE2" strokeWidth="12" strokeDasharray="100.53 251.33" strokeDashoffset="-226.19" />
+                </svg>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="text-sm font-bold text-gray-600 mb-3">Used leaves</h4>
+              {[
+                { label: 'General Leave', used: 4, total: 10, color: '#042A5B', pct: '40%' },
+                { label: 'Medical Leave', used: 1, total: 10, color: '#0B4DA2', pct: '10%' },
+                { label: 'Work From Home', used: 4, total: 10, color: '#87CEEB', pct: '40%' },
+                { label: 'Half-Day Leave', used: 4, total: 10, color: '#5DADE2', pct: '40%' },
+              ].map((item) => (
+                <div key={item.label}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs font-medium text-gray-600">{item.label}</span>
+                    <span className="text-xs font-bold text-gray-800">{item.used} of {item.total}</span>
+                  </div>
+                  <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: item.pct, backgroundColor: item.color }}></div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -514,6 +597,7 @@ export const DashboardPageOld = ({ data, onNavigate }) => {
           <MyAssetsCard assets={myAssets} />
         </div>
       </div>
+      {/* Confirmation modal removed - inline confirmation handles it */}
     </div>
   );
 };

@@ -34,7 +34,8 @@ const userSchema = new mongoose.Schema({
     certifications: [certificationSchema],
     skills: [String],
     languages: [String],
-    isActive: { type: Boolean, default: true }
+    isActive: { type: Boolean, default: true },
+    mustChangePassword: { type: Boolean, default: false }
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

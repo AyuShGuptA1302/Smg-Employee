@@ -14,7 +14,8 @@ import {
   CheckCircle,
   XCircle,
   Eye,
-  Printer
+  Printer,
+  Shield
 } from 'lucide-react';
 
 interface AdminRequestsPageProps {
@@ -120,6 +121,19 @@ export const AdminRequestsPage = ({ onNavigate }: AdminRequestsPageProps) => {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Admin Profile Update Info Banner */}
+      <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-2xl p-4 flex items-start gap-3">
+        <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center shrink-0">
+          <Shield size={18} className="text-indigo-600" />
+        </div>
+        <div>
+          <p className="font-bold text-indigo-800 text-sm">Admin Profile Update Requests → Super Admin</p>
+          <p className="text-xs text-indigo-600 mt-0.5">
+            Your own profile update requests are sent directly to the <strong>Super Admin</strong> for approval. They will not appear in this list.
+            Employee &amp; staff requests are managed here.
+          </p>
+        </div>
+      </div>
       {/* Header */}
       <div className="bg-gradient-to-br from-[#042A5B] via-[#063A75] to-[#0B4DA2] rounded-[30px] p-8 text-white shadow-xl">
         <div className="flex items-center justify-between">
@@ -219,7 +233,7 @@ export const AdminRequestsPage = ({ onNavigate }: AdminRequestsPageProps) => {
               {filteredRequests.map((req) => (
                 <tr key={req.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                   <td className="p-4">
-                    <span className="text-sm font-bold text-[#0B4DA2]">{req.id}</span>
+                    <span className="text-sm font-bold text-[#0B4DA2]">{req.displayId || req.id}</span>
                   </td>
                   <td className="p-4">
                     <div>
@@ -334,7 +348,7 @@ export const AdminRequestsPage = ({ onNavigate }: AdminRequestsPageProps) => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Request ID</p>
-                  <p className="font-bold text-[#0B4DA2]">{selectedRequest.id}</p>
+                  <p className="font-bold text-[#0B4DA2]">{selectedRequest.displayId || selectedRequest.id}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Status</p>
@@ -390,6 +404,22 @@ export const AdminRequestsPage = ({ onNavigate }: AdminRequestsPageProps) => {
                 <p className="text-xs text-gray-500 mb-1">Reason</p>
                 <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">{selectedRequest.reason}</p>
               </div>
+
+              {(selectedRequest.type && selectedRequest.type.startsWith('Profile Update')) && selectedRequest.fields && (
+                <div className="mt-4 p-4 bg-blue-50/50 rounded-xl border border-blue-100 animate-in fade-in">
+                  <h4 className="font-bold text-[#0B4DA2] mb-3 text-sm">
+                    Proposed Profile Changes
+                  </h4>
+                  <div className="space-y-2">
+                    {Object.entries(selectedRequest.fields).map(([key, val]) => (
+                      <div key={key} className="flex justify-between items-center text-xs py-1.5 border-b border-blue-100/30 last:border-b-0">
+                        <span className="font-bold text-gray-500 capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
+                        <span className="text-[#1b254b] font-bold bg-white px-2.5 py-1 rounded border border-gray-200">{val as string}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {selectedRequest.fromDate && (
                 <div className="grid grid-cols-2 gap-4">

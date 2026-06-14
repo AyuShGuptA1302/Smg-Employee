@@ -6,7 +6,9 @@ const requestSchema = new mongoose.Schema({
     type: { type: String, required: true }, // e.g., 'Leave Application', 'Reimbursement'
     description: { type: String, required: true },
     status: { type: String, enum: ['Pending', 'Approved', 'Rejected', 'In Progress'], default: 'Pending' },
-    approver: { type: String }
+    approver: { type: String },
+    fields: { type: mongoose.Schema.Types.Mixed },
+    requesterRole: { type: String, default: 'employee' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Request', requestSchema);

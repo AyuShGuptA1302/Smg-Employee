@@ -34,7 +34,7 @@ const JobDescription = require('../models/JobDescription');
 const KeyRepresentative = require('../models/KeyRepresentative');
 const WelfareProgram = require('../models/WelfareProgram');
 const DepartmentData = require('../models/DepartmentData');
-const { generatePayslipPDF, generateGatePassPDF, generateLeavePDF, generateLetterPDF, generateMissSlipPDF, generateTravelPDF, generateCanteenOrderPDF, generateUniformPDF } = require('../utils/pdfGenerator');
+const { generatePayslipPDF, generateGatePassPDF, generateLeavePDF, generateLetterPDF, generateMissSlipPDF, generateTravelPDF, generateCanteenOrderPDF, generateUniformPDF, generateEmployeeProfilePDF } = require('../utils/pdfGenerator');
 const { sendEmail } = require('../utils/emailSender');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -75,7 +75,8 @@ router.post('/login', async (req, res) => {
         const refreshToken = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '7d' });
         const userObj = user.toObject();
         delete userObj.password;
-        res.json({ ...userObj, token, refreshToken });
+        // Include mustChangePassword so frontend can force password reset on first login
+        res.json({ ...userObj, token, refreshToken, mustChangePassword: user.mustChangePassword || false });
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
@@ -220,57 +221,58 @@ router.post('/users/create-employee', async (req, res) => {
             dateOfBirth: dateOfBirth || '', dateOfJoining: dateOfJoining || new Date().toLocaleDateString('en-IN'),
             bloodGroup: bloodGroup || '', address: address || '', avatar,
             education: education || [], certifications: certifications || [],
-            skills: skills || [], languages: languages || [], emergencyContact: emergencyContact || ''
+            skills: skills || [], languages: languages || [], emergencyContact: emergencyContact || '',
+            mustChangePassword: true  // Force password change on first login
         });
 
-        // Create welcome notification
-        await Notification.create({
-            user: newUser._id,
-            title: 'Welcome to SMG Portal!',
-            message: `Welcome ${name}! Your account has been created. Employee ID: ${empId}`,
-            type: 'success', category: 'Account'
-        });
+        // Create welcome notification (non-blocking - don't fail if this errors)
+        try {
+            await Notification.create({
+                user: newUser._id,
+                title: 'Welcome to SMG Portal!',
+                message: `Welcome ${name}! Your account has been created. Employee ID: ${empId}`,
+                type: 'success', category: 'System'
+            });
+        } catch (notifErr) {
+            console.warn('Welcome notification failed (non-critical):', notifErr.message);
+        }
 
-        // Send Email with Credentials
+        // Build email HTML
         const emailHtml = `
             <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #E5E7EB; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
                 <div style="background-color: #0B4DA2; padding: 30px; text-align: center;">
-                    <img src="https://ui-avatars.com/api/?name=SMG&background=ffffff&color=0B4DA2&rounded=true&size=80" alt="SMG Logo" style="margin-bottom: 15px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"/>
                     <h1 style="color: #ffffff; margin: 0; font-size: 24px; letter-spacing: 1px;">SMG Ltd</h1>
                     <p style="color: #93C5FD; margin: 5px 0 0 0; font-size: 14px;">Employee Management Portal</p>
                 </div>
                 <div style="padding: 40px 30px; background-color: #ffffff; color: #374151;">
                     <h2 style="color: #1F2937; margin-top: 0; font-size: 20px;">Welcome to the Team, ${name}!</h2>
                     <p style="font-size: 16px; line-height: 1.5; color: #4B5563;">
-                        Your official employee account has been successfully created. You can now access the SMG Employee Management Portal to view your dashboard, manage requests, and connect with your team.
+                        Your official employee account has been successfully created.
                     </p>
-                    
                     <div style="background-color: #F4F7FE; border-left: 4px solid #0B4DA2; padding: 20px; margin: 30px 0; border-radius: 0 8px 8px 0;">
                         <h3 style="margin-top: 0; color: #0B4DA2; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Your Login Credentials</h3>
-                        <p style="margin: 0 0 12px 0; font-size: 15px;"><strong>Employee ID:</strong> <span style="color: #1F2937;">${empId}</span></p>
-                        <p style="margin: 0 0 12px 0; font-size: 15px;"><strong>Email Address:</strong> <a href="mailto:${email}" style="color: #0B4DA2; text-decoration: none;">${email}</a></p>
-                        <p style="margin: 0; font-size: 15px;"><strong>Temporary Password:</strong> <code style="background: #E0E7FF; color: #3730A3; padding: 4px 8px; border-radius: 4px; font-weight: bold; letter-spacing: 1px;">${rawPassword}</code></p>
+                        <p style="margin: 0 0 12px 0; font-size: 15px;"><strong>Employee ID:</strong> ${empId}</p>
+                        <p style="margin: 0 0 12px 0; font-size: 15px;"><strong>Email:</strong> ${email}</p>
+                        <p style="margin: 0; font-size: 15px;"><strong>Temporary Password:</strong> <code style="background: #E0E7FF; color: #3730A3; padding: 4px 8px; border-radius: 4px; font-weight: bold;">${rawPassword}</code></p>
                     </div>
-
                     <p style="font-size: 14px; color: #EF4444; background-color: #FEF2F2; padding: 12px; border-radius: 6px; border: 1px solid #FEE2E2;">
-                        <strong>Security Notice:</strong> Please log in to the portal and change this temporary password immediately to secure your account.
+                        <strong>Security Notice:</strong> Please change this temporary password immediately after logging in.
                     </p>
-
-                    <div style="text-align: center; margin-top: 40px;">
-                        <a href="http://localhost:5173" style="display: inline-block; background-color: #0B4DA2; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(11, 77, 162, 0.2);">
-                            Access Portal Now
-                        </a>
-                    </div>
                 </div>
                 <div style="background-color: #F9FAFB; padding: 20px; text-align: center; border-top: 1px solid #E5E7EB;">
-                    <p style="margin: 0; color: #6B7280; font-size: 12px;">
-                        &copy; ${new Date().getFullYear()} SMG Ltd. All rights reserved.<br/>
-                        This is an automated security email. Please do not reply.
-                    </p>
+                    <p style="margin: 0; color: #6B7280; font-size: 12px;">&copy; ${new Date().getFullYear()} SMG Ltd. All rights reserved.</p>
                 </div>
             </div>
         `;
-        const emailResult = await sendEmail(email, 'Welcome to SMG - Your Account Credentials', emailHtml);
+
+        // Send Email with Credentials (non-blocking)
+        let emailResult = { success: false, url: null, error: 'Email not sent' };
+        try {
+            emailResult = await sendEmail(email, 'Welcome to SMG - Your Account Credentials', emailHtml);
+        } catch (emailErr) {
+            console.warn('Welcome email failed (non-critical):', emailErr.message);
+        }
+
 
         const userObj = newUser.toObject();
         delete userObj.password;
@@ -280,7 +282,7 @@ router.post('/users/create-employee', async (req, res) => {
             emailPreviewUrl: emailResult.url,
             message: emailResult.success 
                 ? `Employee created successfully. Email sent to ${email}.`
-                : `Employee created but email failed to send: ${emailResult.error}`
+                : `Employee created successfully. Temporary password: ${rawPassword}`
         });
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
@@ -302,15 +304,21 @@ router.put('/users/:id/change-password', async (req, res) => {
         }
 
         user.password = await bcrypt.hash(newPassword, 12);
+        // Clear the mustChangePassword flag once user has set their own password
+        user.mustChangePassword = false;
         await user.save();
 
-        // Notify user
-        await Notification.create({
-            user: user._id,
-            title: 'Password Changed',
-            message: 'Your password has been changed successfully. If you did not make this change, contact your administrator immediately.',
-            type: 'warning', category: 'Account'
-        });
+        // Notify user (non-blocking - don't fail password change if notification errors)
+        try {
+            await Notification.create({
+                user: user._id,
+                title: 'Password Changed',
+                message: 'Your password has been changed successfully. If you did not make this change, contact your administrator immediately.',
+                type: 'warning', category: 'System'
+            });
+        } catch (notifErr) {
+            console.warn('Password change notification failed (non-critical):', notifErr.message);
+        }
 
         res.json({ message: 'Password changed successfully' });
     } catch (err) { res.status(500).json({ message: err.message }); }
@@ -774,6 +782,86 @@ router.post('/general-requests', async (req, res) => {
     catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+router.post('/profile-update-request', async (req, res) => {
+    try {
+        const { userId, fields } = req.body;
+        if (!userId || !fields || Object.keys(fields).length === 0) {
+            return res.status(400).json({ message: 'User ID and changes are required' });
+        }
+
+        const requesterUser = await User.findById(userId);
+        const actualRole = requesterUser ? requesterUser.role : 'employee';
+
+        // Generate unique reqId sequentially
+        const year = new Date().getFullYear();
+        const requestCount = await Request.countDocuments();
+        const seqNum = String(requestCount + 1).padStart(4, '0');
+        const reqId = `REQ-PR-${year}-${seqNum}`;
+
+        // Construct description
+        const descParts = [];
+        for (const [key, value] of Object.entries(fields)) {
+            descParts.push(`${key.replace(/([A-Z])/g, ' $1')}: ${value}`);
+        }
+        const description = `Profile update requested for: ${descParts.join(', ')}`;
+
+        const fieldLabels = {
+            name: 'Name',
+            email: 'Email',
+            phone: 'Mobile',
+            dateOfBirth: 'Date of Birth',
+            bloodGroup: 'Blood Group',
+            address: 'Address',
+            emergencyContact: 'Emergency Contact'
+        };
+
+        const changedFieldsList = Object.keys(fields).map(key => fieldLabels[key] || key.replace(/([A-Z])/g, ' $1'));
+        const requestType = `Profile Update (${changedFieldsList.join(', ')})`;
+
+        const newRequest = await Request.create({
+            user: userId,
+            reqId,
+            type: requestType,
+            description,
+            fields,
+            status: 'Pending',
+            requesterRole: actualRole
+        });
+
+        // Trigger notification
+        try {
+            await Notification.create({
+                user: userId,
+                title: 'Profile Update Requested',
+                message: actualRole === 'admin'
+                    ? 'Your profile update request has been submitted to Super Admin for approval.'
+                    : 'Your request to update profile details has been submitted for approval.',
+                type: 'info',
+                category: 'System'
+            });
+        } catch (notifErr) {
+            console.error('Failed to create notification for profile request:', notifErr);
+        }
+
+        res.status(201).json(newRequest);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Get all admin profile update requests (for SuperAdmin approval)
+router.get('/admin-profile-requests', async (_req, res) => {
+    try {
+        const requests = await Request.find({
+            type: { $regex: /^Profile Update/i },
+            requesterRole: 'admin'
+        }).populate('user', 'name empId dept role email').sort({ createdAt: -1 });
+        res.json(requests);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // ════════════════════════════════════════
 //  REQUESTS (LEGACY/DASHBOARD)
 // ════════════════════════════════════════
@@ -789,12 +877,15 @@ router.put('/requests/:id', async (req, res) => {
     try {
         const request = await Request.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (req.body.status && request.user) {
+            if (req.body.status === 'Approved' && request.type && /^Profile Update/i.test(request.type) && request.fields) {
+                await User.findByIdAndUpdate(request.user, request.fields, { new: true, runValidators: true });
+            }
             await Notification.create({
                 user: request.user,
                 title: 'Request Status Updated',
                 message: `Your ${request.type || 'request'} has been ${req.body.status}.`,
                 type: req.body.status === 'Approved' ? 'success' : 'warning',
-                category: 'Requests'
+                category: 'Request'
             });
         }
         res.json(request);
@@ -849,7 +940,7 @@ router.get('/admin/dashboard', async (_req, res) => {
         // Real data: recent requests from DB
         const recentReqs = await Request.find().populate('user', 'name empId dept').sort({ createdAt: -1 }).limit(10);
         const recentRequests = recentReqs.map(r => ({
-            id: r._id, employee: r.user?.name || 'Unknown', empId: r.user?.empId, type: r.type,
+            id: r._id, displayId: r.reqId, employee: r.user?.name || 'Unknown', empId: r.user?.empId, type: r.type,
             date: r.createdAt, status: r.status, priority: r.priority || 'Medium'
         }));
 
@@ -887,12 +978,76 @@ router.get('/admin/dashboard', async (_req, res) => {
 
 router.get('/admin/requests', async (_req, res) => {
     try {
+        // Migration: Update requests missing or having empty/null requesterRole
+        const unmigratedRequests = await Request.find({ 
+            $or: [
+                { requesterRole: { $exists: false } },
+                { requesterRole: null },
+                { requesterRole: '' }
+            ]
+        });
+        for (const reqObj of unmigratedRequests) {
+            const userObj = await User.findById(reqObj.user);
+            if (userObj) {
+                reqObj.requesterRole = userObj.role || 'employee';
+                await reqObj.save();
+            }
+        }
+
         const leaves = await Leave.find().populate('user', 'name empId dept');
         const gatePasses = await GatePass.find().populate('user', 'name empId dept');
+        // Exclude profile update requests submitted by admin/superadmin - those go to SuperAdmin approval
+        const generalRequests = await Request.find({ 
+            requesterRole: { $nin: ['admin', 'superadmin'] }
+        }).populate('user', 'name empId dept');
         
         const requests = [
-            ...leaves.map(l => ({ id: l._id, employee: l.user?.name, empId: l.user?.empId, department: l.user?.dept, type: 'Leave Request', category: 'Leave', reason: l.reason, fromDate: l.from, toDate: l.to, days: l.days, submittedOn: l.createdAt, status: l.status, priority: 'Medium' })),
-            ...gatePasses.map(g => ({ id: g._id, employee: g.user?.name, empId: g.user?.empId, department: g.user?.dept, type: 'Gate Pass', category: 'Gate Pass', reason: g.reason, fromDate: g.date, toDate: g.date, time: g.outTime, submittedOn: g.createdAt || g.date, status: g.status, priority: 'High' }))
+            ...leaves.map(l => ({
+                id: l._id,
+                displayId: `REQ-LV-${new Date(l.createdAt || Date.now()).getFullYear()}-${l._id.toString().slice(-4).toUpperCase()}`,
+                employee: l.user?.name,
+                empId: l.user?.empId,
+                department: l.user?.dept,
+                type: 'Leave Request',
+                category: 'Leave',
+                reason: l.reason,
+                fromDate: l.from,
+                toDate: l.to,
+                days: l.days,
+                submittedOn: l.createdAt,
+                status: l.status,
+                priority: 'Medium'
+            })),
+            ...gatePasses.map(g => ({
+                id: g._id,
+                displayId: g.passId,
+                employee: g.user?.name,
+                empId: g.user?.empId,
+                department: g.user?.dept,
+                type: 'Gate Pass',
+                category: 'Gate Pass',
+                reason: g.reason,
+                fromDate: g.date,
+                toDate: g.date,
+                time: g.outTime,
+                submittedOn: g.createdAt || g.date,
+                status: g.status,
+                priority: 'High'
+            })),
+            ...generalRequests.map(r => ({
+                id: r._id,
+                displayId: r.reqId,
+                employee: r.user?.name || 'Unknown',
+                empId: r.user?.empId || 'N/A',
+                department: r.user?.dept || 'N/A',
+                type: r.type,
+                category: 'General',
+                reason: r.description,
+                submittedOn: r.createdAt,
+                status: r.status,
+                priority: (r.type && r.type.startsWith('Profile Update')) ? 'Medium' : 'Low',
+                fields: r.fields
+            }))
         ].sort((a, b) => new Date(b.submittedOn) - new Date(a.submittedOn));
         
         res.json(requests);
@@ -1386,7 +1541,12 @@ router.put('/gatepasses/:id/reject', async (req, res) => {
 router.put('/requests/:id/approve', async (req, res) => {
     try {
         const request = await Request.findByIdAndUpdate(req.params.id, { status: 'Approved' }, { new: true });
-        if (request) await createNotification(request.user, 'Request Approved', `Your ${request.type || 'request'} has been approved.`, 'success');
+        if (request) {
+            if (request.type && /^Profile Update/i.test(request.type) && request.fields) {
+                await User.findByIdAndUpdate(request.user, request.fields, { new: true, runValidators: true });
+            }
+            await createNotification(request.user, 'Request Approved', `Your ${request.type || 'request'} has been approved.`, 'success');
+        }
         res.json(request);
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
@@ -1443,6 +1603,21 @@ router.get('/gatepasses/:userId/stats', async (req, res) => {
         const recent = await GatePass.find({ user: userId }).sort({ createdAt: -1 }).limit(1);
         res.json({ total, approved, pending, rejected, completed, lastPassDate: recent[0]?.createdAt || null });
     } catch (err) { res.status(500).json({ message: err.message }); }
+});
+// ── EMPLOYEE PROFILE PDF EXPORT ──
+router.get('/user/:id/export-profile', async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="SMG_Profile_${user.empId || user._id}.pdf"`);
+
+        const pdfDoc = generateEmployeeProfilePDF(user.toObject());
+        pdfDoc.pipe(res);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
 });
 
 module.exports = router;

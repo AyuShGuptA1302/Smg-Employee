@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Users, BarChart3, Settings, Megaphone, Bell, FolderOpen, FileText, Building2, IndianRupee, GraduationCap, Briefcase, Activity, Calendar, LogIn, LogOut as LogOutIcon } from 'lucide-react';
+import { Users, BarChart3, Settings, Megaphone, Bell, FolderOpen, FileText, Building2, IndianRupee, GraduationCap, Briefcase, Activity, Calendar, LogIn, LogOut as LogOutIcon, Clock } from 'lucide-react';
 
 export const SuperAdminDashboard = ({ onNavigate }) => {
   const [isClockedIn, setIsClockedIn] = useState(false);
   const [clockInTime, setClockInTime] = useState<string | null>(null);
+  const [clockOutTime, setClockOutTime] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<'in' | 'out' | null>(null);
 
   const handleClockIn = () => {
     const t = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
     setClockInTime(t);
+    setClockOutTime(null);
     setIsClockedIn(true);
   };
-  const handleClockOut = () => { setIsClockedIn(false); setClockInTime(null); };
+  const handleClockOut = () => {
+    const t = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    setClockOutTime(t);
+    setIsClockedIn(false);
+  };
 
   const [stats, setStats] = useState<any>({
     employees: 0,
@@ -109,15 +116,73 @@ export const SuperAdminDashboard = ({ onNavigate }) => {
         <div className="space-y-4">
           <div className="bg-gradient-to-br from-[#0B4DA2] to-[#042A5B] p-6 rounded-[24px] shadow-lg text-white">
             <div className="flex items-center gap-2 mb-4"><Calendar size={20} /><h3 className="font-bold text-lg">Attendance</h3></div>
-            {!isClockedIn ? (
-              <button onClick={handleClockIn} className="w-full bg-white text-[#0B4DA2] py-3 rounded-xl font-bold hover:bg-blue-50 transition-all flex items-center justify-center gap-2 active:scale-95"><LogIn size={20} />Clock In</button>
+            {pendingAction ? (
+              <div className="space-y-3 animate-in fade-in duration-200 text-left">
+                <p className="text-xs text-blue-200 leading-relaxed">
+                  Are you sure you want to {pendingAction === 'in' ? 'Clock In' : 'Clock Out'}?
+                </p>
+                <div className="bg-white/10 backdrop-blur-md p-2.5 rounded-xl border border-white/20 text-center font-bold text-sm">
+                  🕒 Current: {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setPendingAction(null)}
+                    className="flex-1 bg-white/20 hover:bg-white/30 text-white py-2 rounded-lg font-semibold text-xs transition-all active:scale-95"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (pendingAction === 'in') {
+                        handleClockIn();
+                      } else {
+                        handleClockOut();
+                      }
+                      setPendingAction(null);
+                    }}
+                    className={`flex-1 py-2 rounded-lg font-semibold text-xs transition-all active:scale-95 ${
+                      pendingAction === 'in' 
+                        ? 'bg-white text-[#0B4DA2] hover:bg-blue-50' 
+                        : 'bg-[#EE5D50] text-white hover:bg-red-600'
+                    }`}
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </div>
+            ) : !isClockedIn ? (
+              <div className="space-y-3">
+                {clockInTime && clockOutTime && (
+                  <div className="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/20 space-y-2 mb-2">
+                    <div className="flex justify-between items-center border-b border-white/10 pb-1.5">
+                      <span className="text-xs text-blue-200 font-medium">Clocked In At</span>
+                      <span className="text-sm font-bold">{clockInTime}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-blue-200 font-medium">Clocked Out At</span>
+                      <span className="text-sm font-bold">{clockOutTime}</span>
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={() => setPendingAction('in')}
+                  className="w-full bg-white text-[#0B4DA2] py-3 rounded-xl font-bold hover:bg-blue-50 transition-all flex items-center justify-center gap-2 active:scale-95"
+                >
+                  <LogIn size={20} />Clock In
+                </button>
+              </div>
             ) : (
               <div className="space-y-3">
                 <div className="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/20">
                   <p className="text-xs text-blue-200 mb-1">Clocked In At</p>
                   <p className="text-xl font-bold">{clockInTime}</p>
                 </div>
-                <button onClick={handleClockOut} className="w-full bg-[#EE5D50] text-white py-3 rounded-xl font-bold hover:bg-red-600 transition-all flex items-center justify-center gap-2 active:scale-95"><LogOutIcon size={20} />Clock Out</button>
+                <button
+                  onClick={() => setPendingAction('out')}
+                  className="w-full bg-[#EE5D50] text-white py-3 rounded-xl font-bold hover:bg-red-600 transition-all flex items-center justify-center gap-2 active:scale-95"
+                >
+                  <LogOutIcon size={20} />Clock Out
+                </button>
               </div>
             )}
           </div>
@@ -141,6 +206,8 @@ export const SuperAdminDashboard = ({ onNavigate }) => {
           </div>
         </div>
       </div>
+
+      {/* Confirmation modal removed - inline confirmation handles it */}
     </div>
   );
 };

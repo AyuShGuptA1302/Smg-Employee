@@ -55,6 +55,31 @@ type Issue = {
   resolvedAt?: string;
 };
 
+// Map UI display roles to backend enum values
+const roleToBackend = (uiRole: string): string => {
+  const map: Record<string, string> = {
+    'Employee': 'employee',
+    'Admin': 'admin',
+    'Super Admin': 'superadmin',
+    'employee': 'employee',
+    'admin': 'admin',
+    'superadmin': 'superadmin',
+    'department': 'department',
+  };
+  return map[uiRole] || 'employee';
+};
+
+// Map backend enum roles to UI display names
+const roleToUI = (backendRole: string): User['role'] => {
+  const map: Record<string, User['role']> = {
+    'employee': 'Employee',
+    'admin': 'Admin',
+    'superadmin': 'Super Admin',
+    'department': 'Employee',
+  };
+  return map[backendRole] || 'Employee';
+};
+
 export const SuperAdminUsersPage = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
@@ -66,14 +91,14 @@ export const SuperAdminUsersPage = () => {
         setUsers(Array.isArray(data) ? data.map((u: any) => ({
           id: u.empId || u._id,
           name: u.name,
-          role: u.role || 'Employee',
+          role: roleToUI(u.role || 'employee'),
           department: u.dept || u.department || '',
-          status: u.status || 'Active',
+          status: u.isActive === false ? 'Inactive' : 'Active',
           email: u.email,
           phone: u.phone || '',
           location: u.location || '',
-          joinDate: u.joinDate || '',
-          reportingManager: u.reportingManager || '',
+          joinDate: u.dateOfJoining || u.joinDate || '',
+          reportingManager: u.reportingTo || u.reportingManager || '',
         })) : []);
       } catch (err) {
         console.error('Error fetching users:', err);
@@ -183,8 +208,8 @@ export const SuperAdminUsersPage = () => {
           name: editForm.name,
           email: editForm.email,
           dept: editForm.department,
-          role: editForm.role || 'employee',
-          designation: editForm.role || 'Employee', // fallback
+          role: roleToBackend(editForm.role || 'Employee'),
+          designation: editForm.role || 'Employee',
           phone: editForm.phone || '',
           location: editForm.location || '',
           reportingTo: editForm.reportingManager || '',
@@ -203,7 +228,7 @@ export const SuperAdminUsersPage = () => {
         const newUser: User = {
           id: newDbUser.empId || newDbUser._id,
           name: newDbUser.name,
-          role: (newDbUser.role as User['role']) || 'Employee',
+          role: roleToUI(newDbUser.role || 'employee'),
           department: newDbUser.dept,
           status: 'Active',
           email: newDbUser.email,
@@ -227,7 +252,7 @@ export const SuperAdminUsersPage = () => {
               name: editForm.name,
               email: editForm.email,
               dept: editForm.department,
-              role: editForm.role,
+              role: roleToBackend(editForm.role || 'Employee'),
               phone: editForm.phone,
               location: editForm.location,
               reportingTo: editForm.reportingManager,

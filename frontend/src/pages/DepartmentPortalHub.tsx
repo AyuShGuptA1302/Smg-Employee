@@ -20,7 +20,8 @@ import {
   Eye,
   EyeOff,
   ArrowRight,
-  LogOut
+  LogOut,
+  LogIn
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -193,6 +194,150 @@ const departments: Department[] = [
   }
 ];
 
+function DepartmentClockWidget() {
+  const [isClockedIn, setIsClockedIn] = useState(false);
+  const [clockInTime, setClockInTime] = useState<string | null>(null);
+  const [clockOutTime, setClockOutTime] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<'in' | 'out' | null>(null);
+  const [expanded, setExpanded] = useState(false);
+
+  const handleClockIn = () => {
+    const t = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    setClockInTime(t);
+    setClockOutTime(null);
+    setIsClockedIn(true);
+    setExpanded(false);
+  };
+
+  const handleClockOut = () => {
+    const t = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    setClockOutTime(t);
+    setIsClockedIn(false);
+    setExpanded(false);
+  };
+
+  return (
+    <div className="fixed bottom-6 right-6 z-[9999] font-sans">
+      {expanded ? (
+        <div className="bg-white rounded-3xl p-5 w-72 shadow-2xl border border-gray-100 animate-in slide-in-from-bottom-4 duration-300">
+          <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-[#0B4DA2]" />
+              <span className="font-bold text-[#1B254B]">Attendance Widget</span>
+            </div>
+            <button 
+              onClick={() => setExpanded(false)}
+              className="text-gray-400 hover:text-gray-600 font-bold text-lg p-1"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="bg-gray-50 rounded-2xl p-3 border border-gray-100 text-center">
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Status</p>
+              <div className="flex items-center justify-center gap-1.5 font-bold text-sm">
+                <span className={`w-2.5 h-2.5 rounded-full ${isClockedIn ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+                <span className={isClockedIn ? 'text-green-600' : 'text-gray-500'}>
+                  {isClockedIn ? 'Active / Clocked In' : 'Inactive / Clocked Out'}
+                </span>
+              </div>
+            </div>
+
+            {pendingAction ? (
+              <div className="space-y-3 animate-in fade-in duration-200 text-left">
+                <p className="text-xs text-gray-500 leading-relaxed font-medium">
+                  Are you sure you want to {pendingAction === 'in' ? 'Clock In' : 'Clock Out'}?
+                </p>
+                <div className="bg-[#F4F7FE] p-2.5 rounded-xl border border-gray-100 text-center font-bold text-sm text-[#0B4DA2]">
+                  🕒 Current: {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setPendingAction(null)}
+                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg font-semibold text-xs transition-all active:scale-95 border border-gray-200/50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (pendingAction === 'in') {
+                        handleClockIn();
+                      } else {
+                        handleClockOut();
+                      }
+                      setPendingAction(null);
+                    }}
+                    className={`flex-1 py-2 rounded-lg font-semibold text-xs transition-all active:scale-95 text-white shadow-md ${
+                      pendingAction === 'in' 
+                        ? 'bg-[#0B4DA2] hover:bg-[#042A5B] shadow-blue-500/20' 
+                        : 'bg-[#EE5D50] hover:bg-red-600 shadow-red-500/20'
+                    }`}
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </div>
+            ) : !isClockedIn ? (
+              <div className="space-y-3">
+                {clockInTime && clockOutTime && (
+                  <div className="bg-[#F4F7FE] p-3 rounded-xl border border-gray-100 space-y-1.5 text-xs text-left">
+                    <div className="flex justify-between items-center border-b border-gray-200/50 pb-1">
+                      <span className="text-gray-500">Clocked In At</span>
+                      <span className="font-bold text-[#1B254B]">{clockInTime}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500">Clocked Out At</span>
+                      <span className="font-bold text-[#1B254B]">{clockOutTime}</span>
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={() => setPendingAction('in')}
+                  className="w-full bg-[#0B4DA2] text-white py-3 rounded-xl font-bold hover:bg-[#042A5B] transition-all flex items-center justify-center gap-2 active:scale-95 text-xs shadow-md shadow-blue-500/20"
+                >
+                  <LogIn className="w-4 h-4" /> Clock In
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="bg-[#F4F7FE] p-3 rounded-xl border border-gray-100 text-xs text-left">
+                  <p className="text-gray-500 mb-0.5">Clocked In At</p>
+                  <p className="text-base font-bold text-[#0B4DA2]">{clockInTime}</p>
+                </div>
+                <button
+                  onClick={() => setPendingAction('out')}
+                  className="w-full bg-[#EE5D50] text-white py-3 rounded-xl font-bold hover:bg-red-600 transition-all flex items-center justify-center gap-2 active:scale-95 text-xs shadow-md shadow-red-500/20"
+                >
+                  <LogOut className="w-4 h-4" /> Clock Out
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setExpanded(true)}
+          className="flex items-center gap-2 bg-[#0B4DA2] text-white px-4 py-3.5 rounded-full shadow-2xl hover:bg-[#042A5B] hover:scale-105 active:scale-95 transition-all group"
+        >
+          <div className="relative">
+            <Clock className="w-5 h-5" />
+            {isClockedIn && (
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[#0B4DA2] animate-ping" />
+            )}
+          </div>
+          <span className="font-bold text-sm pr-1">
+            {isClockedIn ? `Clocked In (${clockInTime})` : 'Attendance'}
+          </span>
+        </button>
+      )}
+
+      {/* Confirmation Modal */}
+      {/* Confirmation modal removed - inline confirmation handles it */}
+    </div>
+  );
+}
+
 export function DepartmentPortalHub() {
   const [activeDepartment, setActiveDepartment] = useState<DepartmentType | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -350,7 +495,7 @@ export function DepartmentPortalHub() {
   // Render department-specific portal after login
   if (activeDepartment && isLoggedIn) {
     return (
-      <div>
+      <div className="relative min-h-screen">
         {/* Render specific department portal */}
         {activeDepartment === 'reception' && <ReceptionPortal />}
         {activeDepartment === 'hr' && <HRPortal />}
@@ -383,6 +528,8 @@ export function DepartmentPortalHub() {
             </div>
           </div>
         )}
+
+        <DepartmentClockWidget />
       </div>
     );
   }
